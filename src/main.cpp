@@ -260,6 +260,9 @@ struct Hits {
   int headX = -1, headY = -1;  // tile bumped from below
 };
 
+// Splits a frame into equal physics steps of at most kStep.
+int substepCount(float dt) { return std::max(1, int(std::ceil(dt / kStep - 1e-3f))); }
+
 std::pair<int, int> tileSpan(float lo, float hi) {
   return {int(std::floor(lo / kTile)), int(std::floor((hi - 0.01f) / kTile))};
 }
@@ -308,6 +311,13 @@ Hits moveAndCollide(const Level& lv, Rectangle& b, Vector2& v, float dt) {
         }
       }
     if (h.ground || h.ceiling) v.y = 0;
+  }
+  // Standing counts as grounded even when this step moved too little to touch the floor.
+  if (v.y >= 0 && !h.ground) {
+    auto [x0, x1] = tileSpan(b.x, b.x + b.width);
+    const int below = int(std::floor((b.y + b.height + 1.0f) / kTile));
+    for (int tx = x0; tx <= x1 && !h.ground; ++tx)
+      h.ground = lv.solidAt(tx, below) && b.y + b.height >= below * kTile - 0.5f;
   }
   return h;
 }
@@ -718,6 +728,7 @@ class Game {
     LevelData d = buildLevel();
     level_ = std::move(d.level);
     player_ = Player{};
+    player_.onGround = true;
     player_.box = {d.start.x * float(kTile) + 6, (d.start.y + 1) * float(kTile) - 44, 20, 44};
     enemies_.clear();
     for (auto [x, y] : d.goombas) {
@@ -816,8 +827,8 @@ class Game {
     const Input in = readInput();
     if (in.jumpPressed) player_.jumpBuffer = 0.12f;
 
-    for (float remaining = dt; remaining > 0; remaining -= kStep) {
-      const float step = std::min(remaining, kStep);
+    for (int i = 0, n = substepCount(dt); i < n; ++i) {
+      const float step = dt / n;
       stepPlayer(in, step);
       stepEnemies(step);
       if (!checkEnemyContacts(in)) return;
@@ -992,8 +1003,8 @@ class Game {
     switch (clearPhase_) {
       case 0: {  // walk up to the keyboard
         const bool arrived = p.box.x + p.box.width / 2 >= keyboardX();
-        for (float remaining = dt; remaining > 0; remaining -= kStep) {
-          const float step = std::min(remaining, kStep);
+        for (int i = 0, n = substepCount(dt); i < n; ++i) {
+          const float step = dt / n;
           p.vel.x = arrived ? 0.0f : 140.0f;
           p.vel.y = std::min(p.vel.y + kGravity * step, kMaxFall);
           p.onGround = moveAndCollide(level_, p.box, p.vel, step).ground;

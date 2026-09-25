@@ -41,3 +41,7 @@ cd build-web && python3 -m http.server 8080
 
 To publish the game, copy `valigo.html`, `valigo.js` and `valigo.wasm` to any
 static web host. The HTML page template is in `web/shell.html`.
+
+## License
+
+Public domain ([The Unlicense](LICENSE)).
