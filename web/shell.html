@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Valigo</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #111; color: #ddd;
+                 font-family: system-ui, sans-serif; }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+    canvas { background: #000; image-rendering: pixelated; max-width: 100vw; outline: none; }
+    p { margin: 0; font-size: 14px; opacity: .75; }
+    footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 16px;
+             text-align: center; font-size: 13px; opacity: .6; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+  <p>Arrows / A-D to move &middot; Space / Up / W to jump &middot; Shift to run &middot; M to toggle music &middot; Enter to start</p>
+  <script>
+    var Module = {
+      canvas: (function () { return document.getElementById('canvas'); })(),
+      print: function (t) { console.log(t); },
+      printErr: function (t) { console.error(t); }
+    };
+    // Keep arrow keys and space from scrolling the page.
+    window.addEventListener('keydown', function (e) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+      // Browsers only allow audio after a user gesture; raylib's audio backend
+      // (miniaudio) listens for clicks and taps, so also unlock it on key presses.
+      if (window.miniaudio && window.miniaudio.unlock) window.miniaudio.unlock();
+    });
+  </script>
+  {{{ SCRIPT }}}
+  <footer>Coded in C++20 with Raylib and CMake</footer>
+</body>
+</html>
